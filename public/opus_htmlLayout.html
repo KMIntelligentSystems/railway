@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ESGE Technical Review - Endoscopic Ultrasound-Guided Tissue Acquisition Dashboard">
+    <meta name="author" content="European Society of Gastrointestinal Endoscopy">
+    <title>ESGE Technical Review: EUS-Guided Tissue Acquisition Dashboard</title>
+
+    <!-- D3.js Library -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* CSS Custom Properties */
+        :root {
+            --primary-color: #1E40AF;
+            --primary-light: #3B82F6;
+            --secondary-color: #10B981;
+            --accent-color: #F59E0B;
+            --danger-color: #EF4444;
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F8FAFC;
+            --bg-tertiary: #F1F5F9;
+            --text-primary: #1E293B;
+            --text-secondary: #475569;
+            --text-muted: #94A3B8;
+            --border-color: #E2E8F0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-serif: 'Merriweather', Georgia, serif;
+        }
+
+        /* Reset & Base Styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            line-height: 1.3;
+            color: var(--text-primary);
+        }
+
+        h1 { font-size: 1.875rem; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.25rem; }
+        h4 { font-size: 1.125rem; }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1E3A8A 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .header-subtitle {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-link:hover, .nav-link:focus {
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        .nav-link:focus-visible {
+            outline: 2px solid white;
+            outline-offset: 2px;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .section-title {
+            font-size: 1.375rem;
+            color: var(--text-primary);
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease, transform 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-badge {
+            background: var(--primary-light);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 1024px) {
+            .grid-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .grid-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Visualization Container */
+        .viz-container {
+    width: 100%;
+    height: 400px;  /* FIXED height, not min-height */
+    position: relative;
+    background: var(--bg-primary);
+    overflow: hidden;  /* Prevent overflow */
+}
+
+.viz-wrapper {
+    width: 100%;
+    height: 100%;  /* Fill parent exactly */
+}
+
+        .viz-container svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .viz-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .viz-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border-color);
+            font-size: 0.875rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Report Content Styles */
+        .report-content {
+            font-family: var(--font-serif);
+            line-height: 1.8;
+        }
+
+        .report-content h2 {
+            font-family: var(--font-sans);
+            font-size: 1.25rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .report-content h3 {
+            font-family: var(--font-sans);
+            font-size: 1.125rem;
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .report-content p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        /* Clinical Findings Cards */
+        .finding-card {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .finding-category {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .finding-insight {
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .finding-evidence {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .evidence-badge {
+            background: var(--secondary-color);
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .finding-action {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Tooltip Styles */
+        .tooltip {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            max-width: 320px;
+            background: rgba(30, 41, 59, 0.96);
+            color: white;
+            border-radius: var(--radius-md);
+            padding: 12px;
+            font-size: 0.8125rem;
+            line-height: 1.4;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 0.875rem;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 3px 0;
+        }
+
+        .tooltip-row span:first-child {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--text-primary);
+            color: var(--bg-tertiary);
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .footer p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Utility Classes */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .text-center { text-align: center; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+
+        /* Responsive Adjustments */
+        @media (max-width: 640px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .header-title {
+                font-size: 1rem;
+            }
+
+            .main-container {
+                padding: 1rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .viz-container {
+                min-height: 300px;
+            }
+
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+        }
+
+        /* Print Styles */
+        @media print {
+            .header {
+                position: static;
+                background: white;
+                color: var(--text-primary);
+                box-shadow: none;
+            }
+
+            .nav {
+                display: none;
+            }
+
+            .card {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid var(--border-color);
+            }
+        }
+
+        /* Chart-specific styles */
+        .axis path, .axis line {
+            stroke: var(--border-color);
+        }
+
+        .axis text {
+            fill: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .grid line {
+            stroke: var(--bg-tertiary);
+        }
+
+        .grid path {
+            stroke: none;
+        }
+
+        .bar-highlight {
+            stroke: var(--primary-color);
+            stroke-width: 2px;
+        }
+
+        .point-highlight {
+            stroke: var(--primary-color);
+            stroke-width: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" role="banner">
+        <div class="header-content">
+            <div>
+                <h1 class="header-title">European Society of Gastrointestinal Endoscopy (ESGE)</h1>
+                <p class="header-subtitle">Technical and Technology Review: EUS-Guided Tissue Acquisition</p>
+            </div>
+            <nav class="nav" role="navigation" aria-label="Main navigation">
+                <a href="#meta-analysis" class="nav-link">Meta-Analysis</a>
+                <a href="#needle-performance" class="nav-link">Needle Performance</a>
+                <a href="#clinical-summary" class="nav-link">Clinical Summary</a>
+                <a href="#recommendations" class="nav-link">Recommendations</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container" role="main">
+
+        <!-- Meta-Analysis Section -->
+        <section id="meta-analysis" class="section" aria-labelledby="meta-analysis-title">
+            <div class="section-header">
+                <div class="section-icon">1</div>
+                <h2 id="meta-analysis-title" class="section-title">Meta-Analysis Visualizations</h2>
+            </div>
+
+            <div class="grid-2">
+                <!-- Bar Chart Card -->
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Diagnostic Sensitivity Comparison</h3>
+                        <span class="card-badge" id="bar-count">Loading...</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2" style="font-size: 0.875rem; color: var(--text-muted);">
+                            Bar chart comparing sensitivity (%) across studies. Hover for exact values. Click to pin selection. Studies with Sensitivity = NR excluded.
+                        </p>
+                        <div id="meta_analysis_barchart" class="viz-container" role="img" aria-label="Bar chart comparing sensitivity across studies">
+                            <div class="viz-loading">Loading visualization...</div>
+                        </div>
+                    </div>
+                    <div class="viz-legend">
+                        <div class="legend-item">
+                            <span class="legend-swatch" style="background: #10B981;"></span>
+                            <span>High (≥ 90%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-swatch" style="background: #F59E0B;"></span>
+                            <span>Medium (80–89.9%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-swatch" style="background: #EF4444;"></span>
+                            <span>Low (&lt; 80%)</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Scatter Plot Card -->
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Sample Size vs. Sensitivity</h3>
+                        <span class="card-badge" id="scat-count">Loading...</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2" style="font-size: 0.875rem; color: var(--text-muted);">
+                            Scatter plot of Total Patients vs Sensitivity (%). Point size reflects study weight. Click to cross-highlight with bar chart.
+                        </p>
+                        <div id="meta_analysis_scatterplot" class="viz-container" role="img" aria-label="Scatter plot showing patient count versus sensitivity">
+                            <div class="viz-loading">Loading visualization...</div>
+                        </div>
+                    </div>
+                    <div class="viz-legend">
+                        <span style="color: var(--text-muted); font-size: 0.8125rem;">
+                            Keyboard: Tab to mark → Enter/Space to pin; Esc to clear selection
+                        </span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Needle Performance Section -->
+        <section id="needle-performance" class="section" aria-labelledby="needle-performance-title">
+            <div class="section-header">
+                <div class="section-icon">2</div>
+                <h2 id="needle-performance-title" class="section-title">Needle Performance Comparison</h2>
+            </div>
+
+            <article class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Accuracy vs. Adequacy by Needle Type</h3>
+                    <span class="card-badge">Grouped Bar Chart</span>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2" style="font-size: 0.875rem; color: var(--text-muted);">
+                        Comparison of diagnostic yield (accuracy) and sample adequacy rates across FNA and FNB needle types with different gauges.
+                    </p>
+                    <div id="needle_performance_chart" class="viz-container" style="min-height: 480px;" role="img" aria-label="Grouped bar chart comparing accuracy and adequacy rates across needle types">
+                        <div class="viz-loading">Loading visualization...</div>
+                    </div>
+                </div>
+                <div class="viz-legend">
+                    <div class="legend-item">
+                        <span class="legend-swatch" style="background: #4E79A7;"></span>
+                        <span>Diagnostic Yield (Accuracy)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-swatch" style="background: #F28E2C;"></span>
+                        <span>Sample Adequacy</span>
+                    </div>
+                    <span style="margin-left: auto; color: var(--text-muted); font-size: 0.8125rem;">
+                        Click bars to highlight needle type group
+                    </span>
+                </div>
+            </article>
+        </section>
+
+        <!-- Clinical Summary Section -->
+        <section id="clinical-summary" class="section" aria-labelledby="clinical-summary-title">
+            <div class="section-header">
+                <div class="section-icon">3</div>
+                <h2 id="clinical-summary-title" class="section-title">Clinical Summary & Reports</h2>
+            </div>
+
+            <div class="grid-2">
+                <!-- Endoscopic Summary -->
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Summary of Endoscopic Trial Findings</h3>
+                        <span class="card-badge">Evidence Review</span>
+                    </div>
+                    <div class="card-body report-content">
+                        <h2>Overview of Clinical Evidence</h2>
+                        <p>This comprehensive review synthesizes evidence from multiple high-quality studies examining endoscopic ultrasound-guided tissue acquisition techniques. The European Society of Gastrointestinal Endoscopy conducted this systematic evaluation using rigorous GRADE methodology, analyzing data from numerous randomized controlled trials and meta-analyses to establish evidence-based recommendations for clinical practice.</p>
+                        <p>The body of evidence includes seven major meta-analyses published between 2020 and 2024, encompassing thousands of patients across international medical centers. This extensive dataset provides robust insights into the diagnostic performance and safety of various needle types and sampling techniques.</p>
+
+                        <h2>Key Performance Metrics</h2>
+                        <p>Diagnostic sensitivity—the ability to correctly identify disease when present—ranged from 76.6% to 86.7% across the reviewed meta-analyses. In practical terms, this means that when a lesion is cancerous, the biopsy procedure correctly identifies it as abnormal in approximately 8 out of 10 cases.</p>
+                        <p>Sample adequacy, which measures whether the obtained tissue is sufficient for pathological analysis, showed marked differences between needle types. Modern end-cutting FNB needles achieved adequacy rates exceeding 90%, meaning nearly all samples provided enough material for diagnosis.</p>
+
+                        <h2>Clinical Significance</h2>
+                        <p>The data strongly supports the superiority of end-cutting FNB needles over traditional options. Network meta-analysis of 19 randomized trials showed that Franseen-type needles outperformed both reverse-bevel FNB needles (relative risk 1.21) and standard FNA needles (relative risk 1.21) for diagnostic accuracy. Fork-tip needles demonstrated similar advantages.</p>
+                        <p>These findings translate to meaningful clinical benefits: fewer repeat procedures, faster time to diagnosis, and reduced patient anxiety.</p>
+                    </div>
+                </article>
+
+                <!-- Needle Preparation Guide -->
+                <article class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Needle Preparation Guide</h3>
+                        <span class="card-badge">Best Practices</span>
+                    </div>
+                    <div class="card-body report-content">
+                        <h2>Overview of Needle Types</h2>
+                        <p>Endoscopic ultrasound-guided tissue acquisition (EUS-TA) procedures rely on specialized needles designed to obtain diagnostic samples from lesions within the gastrointestinal tract and surrounding organs. The needles used fall into two main categories: Fine Needle Aspiration (FNA) needles and Fine Needle Biopsy (FNB) needles.</p>
+                        <p>Among FNB needles, two modern designs have emerged as superior performers: Franseen-type needles and Fork-tip needles. Franseen needles feature three symmetrically distributed cutting points that efficiently capture tissue cores. Fork-tip needles use two asymmetrical sharp points with six cutting edges to achieve similar results.</p>
+
+                        <h2>Key Preparation Steps</h2>
+                        <p>Proper needle preparation begins with selecting the appropriate needle type based on the target lesion and clinical scenario. For solid pancreatic masses, end-cutting FNB needles (Franseen or Fork-tip designs) are strongly recommended based on high-quality evidence from multiple randomized controlled trials.</p>
+                        <p>Before the procedure, practitioners should verify needle integrity and ensure the stylet moves freely within the needle shaft. The fanning technique, where the needle is moved through multiple trajectories within the lesion, has been shown to significantly improve diagnostic accuracy.</p>
+
+                        <h2>Safety Considerations</h2>
+                        <p>The safety profile of EUS-guided tissue acquisition is generally favorable. Adverse event rates across major meta-analyses range from approximately 3% to 8.6%, with most events being mild and self-limiting. Importantly, antibiotic prophylaxis is not routinely recommended for sampling solid masses.</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Recommendations Section -->
+        <section id="recommendations" class="section" aria-labelledby="recommendations-title">
+            <div class="section-header">
+                <div class="section-icon">4</div>
+                <h2 id="recommendations-title" class="section-title">Key Clinical Findings & Recommendations</h2>
+            </div>
+
+            <div class="grid-3">
+                <!-- Needle Selection -->
+                <article class="finding-card">
+                    <div class="finding-category">Equipment Choice</div>
+                    <div class="finding-insight">End-cutting FNB needles (Franseen and Fork-tip designs) significantly outperform traditional FNA and reverse-bevel FNB needles</div>
+                    <div class="finding-evidence">
+                        <span class="evidence-badge">High Quality</span>
+                        <span>19 randomized controlled trials</span>
+                    </div>
+                    <div class="finding-action">→ Preferentially select Franseen or Fork-tip needles for solid pancreatic lesion sampling</div>
+                </article>
+
+                <!-- Technique Optimization -->
+                <article class="finding-card">
+                    <div class="finding-category">Procedural Technique</div>
+                    <div class="finding-insight">Fanning technique and wet-suction methods improve diagnostic yield and sample quality</div>
+                    <div class="finding-evidence">
+                        <span class="evidence-badge">Moderate-High</span>
+                        <span>Multiple RCTs</span>
+                    </div>
+                    <div class="finding-action">→ Incorporate multi-pass fanning approach and wet-suction during tissue acquisition</div>
+                </article>
+
+                <!-- Pass Requirements -->
+                <article class="finding-card">
+                    <div class="finding-category">Procedure Planning</div>
+                    <div class="finding-insight">Optimal pass numbers vary by needle type: 2 passes for end-cutting FNB, 3 for reverse-bevel, 4+ for FNA</div>
+                    <div class="finding-evidence">
+                        <span class="evidence-badge">High Quality</span>
+                        <span>Systematic review</span>
+                    </div>
+                    <div class="finding-action">→ Plan procedure duration and adjust technique based on needle selection</div>
+                </article>
+
+                <!-- Safety Profile -->
+                <article class="finding-card">
+                    <div class="finding-category">Patient Safety</div>
+                    <div class="finding-insight">Adverse event rates range from 3-8.6% across studies, with most events being mild</div>
+                    <div class="finding-evidence">
+                        <span class="evidence-badge">High Quality</span>
+                        <span>Large meta-analyses</span>
+                    </div>
+                    <div class="finding-action">→ Routine antibiotic prophylaxis not required for solid mass sampling</div>
+                </article>
+
+                <!-- Diagnostic Performance -->
+                <article class="finding-card">
+                    <div class="finding-category">Diagnostic Accuracy</div>
+                    <div class="finding-insight">Sensitivity rates of 76.6-86.7% with adequacy rates exceeding 90% for modern needles</div>
+                    <div class="finding-evidence">
+                        <span class="evidence-badge">High Quality</span>
+                        <span>7 major meta-analyses</span>
+                    </div>
+                    <div class="finding-action">→ Counsel patients on expected diagnostic yield and potential need for repeat procedures</div>
+                </article>
+
+                <!-- Resource Utilization -->
+                <article class="finding-card">
+                    <div class="finding-category">Healthcare Efficiency</div>
+                    <div class="finding-insight">ROSE is beneficial for FNA but not necessary for end-cutting FNB needles</div>
+                    <div class="finding-evidence">
+                        <span class="evidence-badge">Moderate</span>
+                        <span>Comparative studies</span>
+                    </div>
+                    <div class="finding-action">→ Facilities without on-site cytopathology can achieve excellent outcomes with FNB needles</div>
+                </article>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+        <div class="footer-content">
+            <p><strong>ESGE Technical Review Dashboard</strong></p>
+            <p>Data source: Endoscopic Trials Meta-Analysis Results | European Society of Gastrointestinal Endoscopy</p>
+            <p style="margin-top: 1rem; font-size: 0.75rem;">
+                © 2024 ESGE. This dashboard is for educational and clinical decision support purposes.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Global Tooltip -->
+    <div id="tooltip" class="tooltip" role="tooltip" aria-hidden="true"></div>
+
+    <!-- D3.js Visualization Scripts -->
+    <script>
+        // ===========================================
+        // CONFIGURATION & UTILITIES
+        // ===========================================
+        const DATA_PATH = "./data/endoscopic_trials_meta_analysis_results.csv";
+
+        const colors = {
+            high: '#10B981',
+            med: '#F59E0B',
+            low: '#EF4444',
+            primary: '#1E40AF',
+            accuracy: '#4E79A7',
+            adequacy: '#F28E2C'
+        };
+
+        const colorBySensitivity = (s) => {
+            if (s == null || Number.isNaN(s)) return '#9CA3AF';
+            if (s >= 90) return colors.high;
+            if (s >= 80) return colors.med;
+            return colors.low;
+        };
+
+        function parseNumber(v) {
+            if (v == null) return null;
+            const s = String(v).trim();
+            if (!s || s.toUpperCase() === 'NR' || s.toUpperCase() === 'N/R') return null;
+            const cleaned = s.replace(/%/g, '').replace(/,/g, '');
+            const num = +cleaned;
+            return Number.isFinite(num) ? num : null;
+        }
+
+        function inferField(row, candidates) {
+            for (const c of candidates) {
+                if (row[c] != null && String(row[c]).trim() !== '') return c;
+            }
+            const keys = Object.keys(row);
+            for (const c of candidates) {
+                const found = keys.find(k => k.toLowerCase() === c.toLowerCase());
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ===========================================
+        // TOOLTIP MANAGEMENT
+        // ===========================================
+        const tooltip = d3.select('#tooltip');
+
+        function showTooltip(html, evt) {
+            tooltip.html(html).classed('visible', true);
+            moveTooltip(evt);
+        }
+
+        function moveTooltip(evt) {
+            const pad = 12;
+            const { clientX: x, clientY: y } = evt;
+            const node = tooltip.node();
+            const rect = node.getBoundingClientRect();
+            const vw = window.innerWidth, vh = window.innerHeight;
+
+            let left = x + pad;
+            let top = y + pad;
+
+            if (left + rect.width + pad > vw) left = x - rect.width - pad;
+            if (top + rect.height + pad > vh) top = y - rect.height - pad;
+
+            tooltip.style('left', left + 'px').style('top', top + 'px');
+        }
+
+        function hideTooltip() {
+            tooltip.classed('visible', false);
+        }
+
+        // ===========================================
+        // CROSS-FILTER SELECTION STATE
+        // ===========================================
+        let pinnedStudyId = null;
+        let barApi = null;
+        let scatterApi = null;
+
+        function setPinned(id) {
+            pinnedStudyId = id;
+            updateHighlights();
+        }
+
+        function clearPinned() {
+            pinnedStudyId = null;
+            updateHighlights();
+        }
+
+        function updateHighlights() {
+            if (barApi) barApi.updatePinned(pinnedStudyId);
+            if (scatterApi) scatterApi.updatePinned(pinnedStudyId);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') clearPinned();
+        });
+
+        // ===========================================
+        // DATA LOADING & PROCESSING
+        // ===========================================
+        d3.csv(DATA_PATH, d3.autoType).then(raw => {
+            if (!raw || !raw.length) {
+                d3.select('#bar-count').text('No data');
+                d3.select('#scat-count').text('No data');
+                return;
+            }
+
+            const sampleRow = raw[0];
+            const studyKey = inferField(sampleRow, ['Study', 'Study Author', 'Study_Name', 'study', 'author', 'first_author']);
+            const sensKey = inferField(sampleRow, ['Sensitivity_Percent', 'Sensitivity (%)', 'Sensitivity', 'sensitivity', 'sens_percent']);
+            const nKey = inferField(sampleRow, ['Total_Patients', 'Total Patients', 'Patients', 'N', 'n', 'total_patients']);
+            const wtKey = inferField(sampleRow, ['Weight', 'Study_Weight', 'Weight_Percent', 'weight', 'w']);
+
+            const normalized = raw.map((r, i) => {
+                const study = studyKey ? r[studyKey] : (r.Study ?? r.study ?? `Study ${i + 1}`);
+                const sensitivity = sensKey ? parseNumber(r[sensKey]) : parseNumber(r.Sensitivity_Percent);
+                const totalPatients = nKey ? parseNumber(r[nKey]) : parseNumber(r.Total_Patients);
+                let weight = wtKey ? parseNumber(r[wtKey]) : null;
+                if (weight == null && totalPatients != null) weight = totalPatients;
+
+                const id = String(study ?? `Study ${i + 1}`);
+                const sid = id + '||' + (totalPatients ?? 'NA') + '||' + i;
+
+                return {
+                    _idx: i,
+                    study: id,
+                    sensitivity,
+                    total_patients: totalPatients,
+                    weight,
+                    _study_id: sid,
+                    _raw: r
+                };
+            });
+
+            const barData = normalized.filter(d => d.sensitivity != null);
+            const scatterData = normalized.filter(d => d.sensitivity != null && d.total_patients != null);
+
+            d3.select('#bar-count').text(`${barData.length} studies`);
+            d3.select('#scat-count').text(`${scatterData.length} studies`);
+
+            // Remove loading indicators
+            d3.selectAll('.viz-loading').remove();
+
+            barApi = renderSensitivityBarChart({
+                el: document.querySelector('#meta_analysis_barchart'),
+                data: barData
+            });
+
+            scatterApi = renderPatientsVsSensitivityScatter({
+                el: document.querySelector('#meta_analysis_scatterplot'),
+                data: scatterData
+            });
+
+            updateHighlights();
+        }).catch(err => {
+            console.error('Failed to load CSV:', err);
+            d3.select('#bar-count').text('Load failed');
+            d3.select('#scat-count').text('Load failed');
+        });
+
+        // ===========================================
+        // BAR CHART: SENSITIVITY COMPARISON
+        // ===========================================
+        function renderSensitivityBarChart({ el, data }) {
+            const container = d3.select(el);
+            container.html('');
+
+            const margin = { top: 20, right: 20, bottom: 90, left: 55 };
+            const svg = container.append('svg');
+            const g = svg.append('g');
+
+            const gx = g.append('g').attr('class', 'axis axis-x');
+            const gy = g.append('g').attr('class', 'axis axis-y');
+            const ggrid = g.append('g').attr('class', 'grid');
+
+            const sorted = [...data].sort((a, b) => d3.descending(a.sensitivity, b.sensitivity));
+
+            const api = { updatePinned: () => {} };
+
+            function draw() {
+                const { width: W, height: H } = el.getBoundingClientRect();
+                const width = Math.max(320, W);
+                const height = Math.max(300, H);
+
+                svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+                const innerW = width - margin.left - margin.right;
+                const innerH = height - margin.top - margin.bottom;
+
+                g.attr('transform', `translate(${margin.left},${margin.top})`);
+
+                const x = d3.scaleBand()
+                    .domain(sorted.map(d => d._study_id))
+                    .range([0, innerW])
+                    .padding(0.2);
+
+                const y = d3.scaleLinear()
+                    .domain([0, Math.max(100, d3.max(sorted, d => d.sensitivity) ?? 100)]).nice()
+                    .range([innerH, 0]);
+
+                ggrid.call(d3.axisLeft(y).ticks(5).tickSize(-innerW).tickFormat(''))
+                    .call(sel => sel.selectAll('line').attr('stroke', '#E2E8F0'));
+
+                gy.call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d}%`));
+                gx.attr('transform', `translate(0,${innerH})`)
+                    .call(d3.axisBottom(x).tickFormat((k) => {
+                        const d = sorted.find(s => s._study_id === k);
+                        return d ? d.study : k;
+                    }))
+                    .call(sel => sel.selectAll('text')
+                        .attr('text-anchor', 'end')
+                        .attr('dx', '-0.55em')
+                        .attr('dy', '0.2em')
+                        .attr('transform', 'rotate(-40)')
+                    );
+
+                const bars = g.selectAll('rect.bar').data(sorted, d => d._study_id);
+
+                bars.exit().transition().duration(300).attr('height', 0).attr('y', innerH).remove();
+
+                const barsEnter = bars.enter().append('rect')
+                    .attr('class', 'bar')
+                    .attr('tabindex', 0)
+                    .attr('role', 'button')
+                    .attr('x', d => x(d._study_id))
+                    .attr('width', x.bandwidth())
+                    .attr('y', innerH)
+                    .attr('height', 0)
+                    .attr('rx', 4)
+                    .attr('fill', d => colorBySensitivity(d.sensitivity))
+                    .attr('stroke', 'rgba(0,0,0,0.1)')
+                    .attr('stroke-width', 1)
+                    .style('cursor', 'pointer');
+
+                barsEnter.merge(bars)
+                    .on('mouseenter', function(evt, d) {
+                        showTooltip(barTooltipHtml(d), evt);
+                        d3.select(this).attr('stroke', colors.primary).attr('stroke-width', 2);
+                    })
+                    .on('mousemove', (evt, d) => moveTooltip(evt))
+                    .on('mouseleave', function() {
+                        hideTooltip();
+                        d3.select(this).attr('stroke', 'rgba(0,0,0,0.1)').attr('stroke-width', 1);
+                    })
+                    .on('click', (evt, d) => {
+                        evt.preventDefault();
+                        setPinned(d._study_id);
+                    })
+                    .transition().duration(650)
+                    .attr('x', d => x(d._study_id))
+                    .attr('width', x.bandwidth())
+                    .attr('y', d => y(d.sensitivity))
+                    .attr('height', d => Math.max(0, innerH - y(d.sensitivity)));
+
+                function barTooltipHtml(d) {
+                    return `
+                        <div class="tooltip-title">${escapeHtml(d.study)}</div>
+                        <div class="tooltip-row"><span>Sensitivity</span><span>${d.sensitivity?.toFixed(1)}%</span></div>
+                        <div class="tooltip-row"><span>Patients</span><span>${d.total_patients ? d3.format(',')(d.total_patients) : 'NR'}</span></div>
+                        <div class="tooltip-row"><span>Weight</span><span>${d.weight ? d3.format(',.1f')(d.weight) : 'NR'}</span></div>
+                    `;
+                }
+
+                api.updatePinned = (pinnedId) => {
+                    g.selectAll('rect.bar')
+                        .attr('opacity', d => (pinnedId && d._study_id !== pinnedId) ? 0.25 : 1)
+                        .attr('stroke', d => (pinnedId && d._study_id === pinnedId) ? colors.primary : 'rgba(0,0,0,0.1)')
+                        .attr('stroke-width', d => (pinnedId && d._study_id === pinnedId) ? 3 : 1);
+                };
+
+                api.updatePinned(pinnedStudyId);
+            }
+
+            const ro = new ResizeObserver(() => draw());
+            ro.observe(el);
+            draw();
+
+            return api;
+        }
+
+        // ===========================================
+        // SCATTER PLOT: PATIENTS VS SENSITIVITY
+        // ===========================================
+        function renderPatientsVsSensitivityScatter({ el, data }) {
+            const container = d3.select(el);
+            container.html('');
+
+            const margin = { top: 20, right: 20, bottom: 50, left: 60 };
+            const svg = container.append('svg');
+            const g = svg.append('g');
+
+            const gx = g.append('g').attr('class', 'axis axis-x');
+            const gy = g.append('g').attr('class', 'axis axis-y');
+            const ggrid = g.append('g').attr('class', 'grid');
+
+            const api = { updatePinned: () => {} };
+
+            function draw() {
+                const { width: W, height: H } = el.getBoundingClientRect();
+                const width = Math.max(320, W);
+                const height = Math.max(300, H);
+
+                svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+                const innerW = width - margin.left - margin.right;
+                const innerH = height - margin.top - margin.bottom;
+
+                g.attr('transform', `translate(${margin.left},${margin.top})`);
+
+                const x = d3.scaleLinear()
+                    .domain(d3.extent(data, d => d.total_patients)).nice()
+                    .range([0, innerW]);
+
+                const y = d3.scaleLinear()
+                    .domain([0, Math.max(100, d3.max(data, d => d.sensitivity) ?? 100)]).nice()
+                    .range([innerH, 0]);
+
+                const wExtent = d3.extent(data, d => d.weight ?? d.total_patients);
+                const r = d3.scaleSqrt()
+                    .domain([Math.max(1e-6, wExtent[0] ?? 1), wExtent[1] ?? 1])
+                    .range([5, 16]);
+
+                ggrid.call(d3.axisLeft(y).ticks(5).tickSize(-innerW).tickFormat(''))
+                    .call(sel => sel.selectAll('line').attr('stroke', '#E2E8F0'));
+
+                gy.call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d}%`));
+                gx.attr('transform', `translate(0,${innerH})`)
+                    .call(d3.axisBottom(x).ticks(5).tickFormat(d3.format(',')));
+
+                // X-axis label
+                svg.selectAll('.x-label').remove();
+                svg.append('text')
+                    .attr('class', 'x-label')
+                    .attr('x', margin.left + innerW / 2)
+                    .attr('y', height - 8)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#6B7280')
+                    .attr('font-size', '12px')
+                    .text('Total Patients');
+
+                const pts = g.selectAll('circle.pt').data(data, d => d._study_id);
+
+                pts.exit().transition().duration(250).attr('r', 0).remove();
+
+                const ptsEnter = pts.enter().append('circle')
+                    .attr('class', 'pt')
+                    .attr('tabindex', 0)
+                    .attr('role', 'button')
+                    .attr('cx', d => x(d.total_patients))
+                    .attr('cy', d => y(d.sensitivity))
+                    .attr('r', 0)
+                    .attr('fill', d => colorBySensitivity(d.sensitivity))
+                    .attr('fill-opacity', 0.85)
+                    .attr('stroke', 'rgba(0,0,0,0.15)')
+                    .attr('stroke-width', 1)
+                    .style('cursor', 'pointer');
+
+                ptsEnter.merge(pts)
+                    .on('mouseenter', function(evt, d) {
+                        showTooltip(scatterTooltipHtml(d), evt);
+                        d3.select(this).attr('stroke', colors.primary).attr('stroke-width', 2);
+                    })
+                    .on('mousemove', (evt) => moveTooltip(evt))
+                    .on('mouseleave', function() {
+                        hideTooltip();
+                        d3.select(this).attr('stroke', 'rgba(0,0,0,0.15)').attr('stroke-width', 1);
+                    })
+                    .on('click', (evt, d) => {
+                        evt.preventDefault();
+                        setPinned(d._study_id);
+                    })
+                    .transition().duration(650)
+                    .attr('cx', d => x(d.total_patients))
+                    .attr('cy', d => y(d.sensitivity))
+                    .attr('r', d => r(d.weight ?? d.total_patients));
+
+                // Trend line
+                const trend = leastSquares(data.map(d => d.total_patients), data.map(d => d.sensitivity));
+                const x1 = d3.min(data, d => d.total_patients), x2 = d3.max(data, d => d.total_patients);
+                const y1 = trend.intercept + trend.slope * x1;
+                const y2 = trend.intercept + trend.slope * x2;
+
+                const trendLine = g.selectAll('line.trend').data(Number.isFinite(x1) && Number.isFinite(x2) ? [1] : []);
+                trendLine.enter().append('line')
+                    .attr('class', 'trend')
+                    .attr('stroke', 'rgba(107,114,128,0.5)')
+                    .attr('stroke-width', 2)
+                    .attr('stroke-dasharray', '6,4')
+                    .merge(trendLine)
+                    .attr('x1', x(x1)).attr('y1', y(y1))
+                    .attr('x2', x(x2)).attr('y2', y(y2));
+                trendLine.exit().remove();
+
+                function scatterTooltipHtml(d) {
+                    return `
+                        <div class="tooltip-title">${escapeHtml(d.study)}</div>
+                        <div class="tooltip-row"><span>Patients</span><span>${d3.format(',')(d.total_patients)}</span></div>
+                        <div class="tooltip-row"><span>Sensitivity</span><span>${d.sensitivity?.toFixed(1)}%</span></div>
+                        <div class="tooltip-row"><span>Weight</span><span>${d.weight ? d3.format(',.1f')(d.weight) : 'NR'}</span></div>
+                    `;
+                }
+
+                api.updatePinned = (pinnedId) => {
+                    g.selectAll('circle.pt')
+                        .attr('opacity', d => (pinnedId && d._study_id !== pinnedId) ? 0.2 : 1)
+                        .attr('stroke', d => (pinnedId && d._study_id === pinnedId) ? colors.primary : 'rgba(0,0,0,0.15)')
+                        .attr('stroke-width', d => (pinnedId && d._study_id === pinnedId) ? 3 : 1);
+                };
+
+                api.updatePinned(pinnedStudyId);
+            }
+
+            function leastSquares(xSeries, ySeries) {
+                const n = Math.min(xSeries.length, ySeries.length);
+                if (!n) return { slope: 0, intercept: 0 };
+
+                let xSum = 0, ySum = 0, xxSum = 0, xySum = 0, count = 0;
+                for (let i = 0; i < n; i++) {
+                    const x = xSeries[i], y = ySeries[i];
+                    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+                    xSum += x; ySum += y; xxSum += x * x; xySum += x * y; count++;
+                }
+                if (count < 2) return { slope: 0, intercept: count === 1 ? ySum / count : 0 };
+
+                const slope = (count * xySum - xSum * ySum) / (count * xxSum - xSum * xSum);
+                const intercept = (ySum - slope * xSum) / count;
+                return { slope, intercept };
+            }
+
+            const ro = new ResizeObserver(() => draw());
+            ro.observe(el);
+            draw();
+
+            return api;
+        }
+
+        // ===========================================
+        // GROUPED BAR CHART: NEEDLE PERFORMANCE
+        // ===========================================
+        (function renderNeedlePerformanceChart() {
+            const el = document.querySelector('#needle_performance_chart');
+            const container = d3.select(el);
+            container.html('');
+
+            const chartData = {
+                grouped_bar_data: [
+                    { needle_type: 'FNA-19G', diagnostic_yield: 90.2, sample_adequacy: 93.5, needle_ids: ['N-005'] },
+                    { needle_type: 'FNA-22G', diagnostic_yield: 88.4, sample_adequacy: 91.97, needle_ids: ['N-001', 'N-007', 'N-011'] },
+                    { needle_type: 'FNA-25G', diagnostic_yield: 85.1, sample_adequacy: 89.05, needle_ids: ['N-003', 'N-009'] },
+                    { needle_type: 'FNB-19G', diagnostic_yield: 92.8, sample_adequacy: 95.1, needle_ids: ['N-008'] },
+                    { needle_type: 'FNB-22G', diagnostic_yield: 93.6, sample_adequacy: 96.03, needle_ids: ['N-002', 'N-006', 'N-012'] },
+                    { needle_type: 'FNB-25G', diagnostic_yield: 91.1, sample_adequacy: 94.0, needle_ids: ['N-004', 'N-010'] }
+                ],
+                axes: {
+                    x: { field: 'needle_type', label: 'Needle Type and Gauge' },
+                    y: { label: 'Performance Rate (%)', domain: [80, 100] }
+                },
+                groups: ['diagnostic_yield', 'sample_adequacy'],
+                colors: { diagnostic_yield: '#4E79A7', sample_adequacy: '#F28E2C' }
+            };
+
+            const data = chartData.grouped_bar_data;
+            const keys = chartData.groups;
+            const groupKey = chartData.axes.x.field;
+            const baseColors = chartData.colors;
+
+            function drawChart() {
+                container.selectAll('svg').remove();
+
+                const { width: containerWidth, height: containerHeight } = el.getBoundingClientRect();
+                const margin = { top: 30, right: 30, bottom: 80, left: 60 };
+                const width = Math.max(400, containerWidth) - margin.left - margin.right;
+                const height = Math.max(350, containerHeight) - margin.top - margin.bottom;
+
+                const svg = container.append('svg')
+                    .attr('width', containerWidth)
+                    .attr('height', containerHeight)
+                    .attr('viewBox', `0 0 ${containerWidth} ${containerHeight}`)
+                    .attr('preserveAspectRatio', 'xMidYMid meet');
+
+                const chart = svg.append('g')
+                    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+                const x0 = d3.scaleBand()
+                    .domain(data.map(d => d[groupKey]))
+                    .range([0, width])
+                    .paddingInner(0.2);
+
+                const x1 = d3.scaleBand()
+                    .domain(keys)
+                    .range([0, x0.bandwidth()])
+                    .padding(0.08);
+
+                const y = d3.scaleLinear()
+                    .domain(chartData.axes.y.domain)
+                    .nice()
+                    .range([height, 0]);
+
+                // Grid lines
+                chart.append('g')
+                    .attr('class', 'grid')
+                    .call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(''))
+                    .call(g => g.selectAll('line').attr('stroke', '#E2E8F0'))
+                    .call(g => g.select('.domain').remove());
+
+                // X-axis
+                chart.append('g')
+                    .attr('transform', `translate(0,${height})`)
+                    .call(d3.axisBottom(x0).tickSizeOuter(0))
+                    .selectAll('.tick text')
+                    .style('text-anchor', 'end')
+                    .attr('dx', '-.8em')
+                    .attr('dy', '.15em')
+                    .attr('transform', 'rotate(-40)');
+
+                // Y-axis
+                chart.append('g')
+                    .call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d}%`))
+                    .call(g => g.select('.domain').remove());
+
+                // Axis labels
+                svg.append('text')
+                    .attr('x', margin.left + width / 2)
+                    .attr('y', containerHeight - 10)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#6B7280')
+                    .attr('font-size', '12px')
+                    .text(chartData.axes.x.label);
+
+                svg.append('text')
+                    .attr('transform', 'rotate(-90)')
+                    .attr('y', 15)
+                    .attr('x', -(margin.top + height / 2))
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#6B7280')
+                    .attr('font-size', '12px')
+                    .text(chartData.axes.y.label);
+
+                // Bars
+                const barGroups = chart.append('g')
+                    .selectAll('g')
+                    .data(data)
+                    .join('g')
+                    .attr('transform', d => `translate(${x0(d[groupKey])},0)`)
+                    .attr('class', 'bar-group');
+
+                barGroups.selectAll('rect')
+                    .data(d => keys.map(key => ({
+                        key: key,
+                        value: d[key],
+                        parentData: d
+                    })))
+                    .join('rect')
+                    .attr('x', d => x1(d.key))
+                    .attr('width', x1.bandwidth())
+                    .attr('y', height)
+                    .attr('height', 0)
+                    .attr('rx', 3)
+                    .attr('fill', d => baseColors[d.key])
+                    .attr('class', 'bar')
+                    .style('cursor', 'pointer')
+                    .on('mouseenter', function(evt, d) {
+                        d3.select(this).attr('stroke', colors.primary).attr('stroke-width', 2);
+                        const metricName = d.key === 'diagnostic_yield' ? 'Diagnostic Yield' : 'Sample Adequacy';
+                        showTooltip(`
+                            <div class="tooltip-title">${d.parentData.needle_type}</div>
+                            <div class="tooltip-row"><span>${metricName}</span><span>${d.value}%</span></div>
+                            <div class="tooltip-row"><span>Needle IDs</span><span>${d.parentData.needle_ids.join(', ')}</span></div>
+                        `, evt);
+                    })
+                    .on('mousemove', moveTooltip)
+                    .on('mouseleave', function() {
+                        d3.select(this).attr('stroke', 'none');
+                        hideTooltip();
+                    })
+                    .transition()
+                    .duration(800)
+                    .delay((d, i) => i * 50)
+                    .attr('y', d => y(d.value))
+                    .attr('height', d => Math.max(0, height - y(d.value)));
+            }
+
+            const ro = new ResizeObserver(() => drawChart());
+            ro.observe(el);
+            drawChart();
+        })();
+    </script>
+</body>
+</html>
