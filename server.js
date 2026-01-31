@@ -1,11 +1,26 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Debug: Check if public directory exists
+const publicPath = path.join(__dirname, 'public');
+console.log('Public directory path:', publicPath);
+console.log('Public directory exists:', fs.existsSync(publicPath));
+if (fs.existsSync(publicPath)) {
+  console.log('Files in public:', fs.readdirSync(publicPath));
+}
+
+// Log all requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
 // Serve static files from 'public' directory
-app.use(express.static('public'));
+app.use(express.static(publicPath));
 
 // Set correct MIME types
 app.use((req, res, next) => {
