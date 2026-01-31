@@ -1,0 +1,8 @@
+Study,Author,Year,Country,Study_Type,Number_of_Studies,Total_Patients,Sample_Adequacy_Percent,Sensitivity_Percent,Specificity_Percent,Diagnostic_Accuracy_Percent,Adverse_Event_Rate_Percent
+Tacelli,Tacelli,2020,Italy,Meta-analysis,9,454,98.5,86.7,69.5,28.7,8.6
+Facciorusso,Facciorusso,2020,Italy,Meta-analysis,11,490,NR,85.3,78.8,NR,6
+Westerveld,Westerveld,2020,USA,Meta-analysis,8,426,98.2,NR,72.5,38.1,7
+McCarty,McCarty,2020,USA,Meta-analysis,11,518,97.1,79.6,82.7,NR,8.26
+Rift,Rift,2021,Denmark,Meta-analysis,10,99,NR,NR,86,NR,NR
+Kovacevic,Kovacevic,2021,Denmark/Italy,Meta-analysis,12,1023,94,NR,74,NR,5
+Gopakumar,Gopakumar,2024,USA,Meta-analysis,11,575,NR,76.6,98.9,NR,3.04
