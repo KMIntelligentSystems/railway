@@ -29,10 +29,6 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
 // 404 handler
 app.use((req, res) => {
   res.status(404).send('Page not found');
